@@ -1,5 +1,7 @@
 # Agent State IO
 
+[![Tests](https://github.com/gowreemanohar/agent-state-io/actions/workflows/tests.yml/badge.svg)](https://github.com/gowreemanohar/agent-state-io/actions/workflows/tests.yml)
+
 A small, standard-library-only Python utility for publishing local text/JSON state and coordinating cooperating writers with a reentrant file lock. Extracted from an existing local research application's state-publication utility; this is its first standalone public release.
 
 ## Install
@@ -42,9 +44,12 @@ atomic_text("state/status.txt", "Ready\n")
 ```sh
 python -m unittest discover -s tests -v
 python examples/counter.py
+python examples/worker_progress.py
 ```
 
-Tests use synthetic temporary data only. Windows verification is recorded in RELEASE_NOTES.md; POSIX behavior needs independent validation. Contributions should include a minimal reproduction and focused regression tests. Do not put credentials, personal data, or production state in issues or fixtures.
+The worker-progress example launches three real local processes which update one JSON document under a shared lock. It checks that all 30 work items are represented in the final progress state. It uses synthetic data in a temporary directory, without accounts or API calls. It is an integration example maintained in this repository, not evidence of external adoption.
+
+Tests use synthetic temporary data only. CI exercises Windows, Linux, and macOS on Python 3.10 and 3.13; consult the linked Actions run for actual results. See [CONTRIBUTING.md](CONTRIBUTING.md) for reproduction and contribution guidance. Do not put credentials, personal data, or production state in issues or fixtures.
 
 ## License
 

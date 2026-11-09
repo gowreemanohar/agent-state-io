@@ -24,6 +24,13 @@ def attempt_lock(path, result):
         result.put("timeout")
 
 
+def hold_until_terminated(path, ready):
+    with workspace_lock(path):
+        ready.set()
+        import time
+        time.sleep(60)
+
+
 class IOTests(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
@@ -108,6 +115,25 @@ class IOTests(unittest.TestCase):
                 if worker.is_alive():
                     worker.terminate()
                     worker.join()
+
+    def test_process_death_releases_os_lock(self):
+        ctx = mp.get_context("spawn")
+        ready = ctx.Event()
+        path = self.root / "crash.lock"
+        worker = ctx.Process(target=hold_until_terminated, args=(path, ready))
+        worker.start()
+        try:
+            self.assertTrue(ready.wait(10), "worker did not acquire lock")
+            worker.terminate()
+            worker.join(10)
+            self.assertFalse(worker.is_alive())
+            with workspace_lock(path, timeout=1):
+                atomic_json(self.root / "recovered.json", {"recovered": True})
+            self.assertTrue(json.loads((self.root / "recovered.json").read_text())["recovered"])
+        finally:
+            if worker.is_alive():
+                worker.terminate()
+                worker.join()
 
 
 if __name__ == "__main__":
